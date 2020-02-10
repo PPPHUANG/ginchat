@@ -1,0 +1,21 @@
+# # possible values : production, development
+# app_mode: development
+
+server:
+  # Protocol (http or https)
+  protocol: http
+  ip: 127.0.0.1
+  port: 8080
+  # Redirect to correct domain if host header does not match domain
+  # Prevents DNS rebinding attacks
+  enforce_domain: true
+  log_path: "./logger/ginchat/"
+  # HTTP log output stdout
+  log_stdout: false
+  # server mode:0 INFINITY、 1 minio、2 INFINITY & minio
+  mode: 0
+  # server debug
+  debug: false
+mysql:
+  ip: 127.0.0.1
+  port: 3306
