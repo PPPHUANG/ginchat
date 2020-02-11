@@ -201,7 +201,7 @@
                         var that = this;
                         for(var id in res){
                             //console.log("res[i]",id,res[id])
-                            post(res[id],{},function(pkginfo){
+                            get(res[id],{},function(pkginfo){
                                 //console.log("post res[i]",id,res[id],pkginfo)
                                 var baseurl= config.baseurl+"/"+pkginfo.id+"/"
                                 for(var j in pkginfo.assets){
@@ -217,7 +217,7 @@
                         }
                     },
                     showweixin:function(){
-                        mui.alert("请加微信号jiepool-winlion索取")
+                        mui.alert("请加微信号test索取")
                     } ,
                     showmsg:function(user,msg){
                         var data={

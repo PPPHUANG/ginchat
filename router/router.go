@@ -6,7 +6,6 @@
 package router
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"text/template"
@@ -30,7 +29,7 @@ func Register() (*gin.Engine, error) {
 	router := gin.Default()
 
 	//指定目录的静态文件
-	router.Static("/assets/", "./assets")
+	router.Static("/asset/", "./asset")
 	router.Static("/mnt/", "./mnt")
 
 	RegisterView(router)
@@ -66,7 +65,7 @@ func Register() (*gin.Engine, error) {
 
 	chatRT := router.Group("/chat")
 	{
-		chatRT.POST("", chat.Chat)
+		chatRT.GET("", chat.Chat)
 	}
 
 	attachRT := router.Group("/attach")
@@ -108,7 +107,7 @@ func RegisterView(router *gin.Engine) {
 	}
 	for _, v := range tpl.Templates() {
 		tplname := v.Name()
-		fmt.Println("Template    " + v.Name())
+		//fmt.Println("Template    " + v.Name())
 		router.GET(tplname, func(ctx *gin.Context) {
 			//fmt.Println("parse  " + v.Name() + "==" + tplname)
 			err := tpl.ExecuteTemplate(ctx.Writer, tplname, nil)
