@@ -3,4 +3,5 @@
 *.vscode/
 *.a
 *logger/
+*mnt/
 !logger/log.go
