@@ -11,56 +11,67 @@ import (
 
 	"ginchat/db_conn"
 	"ginchat/model"
+
+	log "github.com/sirupsen/logrus"
 )
 
 type ContactService struct {
 }
 
-//自动添加好友
-func (service *ContactService) AddFriend(
-	userid, //用户id 10086,
-	dstid int64) error {
-	//如果加自己
-	if userid == dstid {
-		return errors.New("不能添加自己为好友啊")
+//add Friend
+func (service *ContactService) AddFriend(userId, dstId int64) error {
+	if userId == dstId {
+		return errors.New("can't add yourself as a friend")
 	}
-	//判断是否已经加了好友
 	tmp := model.Contact{}
-	//查询是否已经是好友
-	// 条件的链式操作
-	db_conn.DbClient.Where("ownerid = ?", userid).
-		And("dstid = ?", dstid).
+	_, err := db_conn.DbClient.Where("ownerid = ?", userId).
+		And("dstid = ?", dstId).
 		And("cate = ?", model.CONCAT_CATE_USER).
 		Get(&tmp)
-	//如果存在记录说明已经是好友了不加
-	if tmp.Id > 0 {
-		return errors.New("该用户已经被添加过啦")
+	if err != nil {
+		log.WithFields(log.Fields{
+			"filename": "/contact.go/AddFriend/Get",
+		}).Error(err.Error())
 	}
-	//事务,
+	if tmp.Id > 0 {
+		return errors.New("user has been added")
+	}
 	session := db_conn.DbClient.NewSession()
-	session.Begin()
-	//插自己的
+	err = session.Begin()
+	if err != nil {
+		log.WithFields(log.Fields{
+			"filename": "/contact.go/AddFriend/sessionBegin",
+		}).Error(err.Error())
+		return err
+	}
 	_, e2 := session.InsertOne(model.Contact{
-		Ownerid:  userid,
-		Dstobj:   dstid,
+		Ownerid:  userId,
+		Dstobj:   dstId,
 		Cate:     model.CONCAT_CATE_USER,
 		Createat: time.Now(),
 	})
-	//插对方的
 	_, e3 := session.InsertOne(model.Contact{
-		Ownerid:  dstid,
-		Dstobj:   userid,
+		Ownerid:  dstId,
+		Dstobj:   userId,
 		Cate:     model.CONCAT_CATE_USER,
 		Createat: time.Now(),
 	})
-	//没有错误
 	if e2 == nil && e3 == nil {
-		//提交
-		session.Commit()
-		return nil
+		err = session.Commit()
+		if err != nil {
+			log.WithFields(log.Fields{
+				"filename": "/contact.go/AddFriend/sessionCommit",
+			}).Error(err.Error())
+		}
+		return err
 	} else {
-		//回滚
-		session.Rollback()
+		err = session.Rollback()
+		if err != nil {
+			log.WithFields(log.Fields{
+				"filename": "/contact.go/AddFriend/sessionRollback",
+			}).Error(err.Error())
+			return err
+		}
 		if e2 != nil {
 			return e2
 		} else {
@@ -69,11 +80,17 @@ func (service *ContactService) AddFriend(
 	}
 }
 
-func (service *ContactService) SearchComunity(userId int64) []model.Community {
+func (service *ContactService) SearchCommunity(userId int64) []model.Community {
 	conconts := make([]model.Contact, 0)
 	comIds := make([]int64, 0)
 
-	db_conn.DbClient.Where("ownerid = ? and cate = ?", userId, model.CONCAT_CATE_COMUNITY).Find(&conconts)
+	err := db_conn.DbClient.Where("ownerid = ? and cate = ?", userId, model.CONCAT_CATE_COMUNITY).Find(&conconts)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"filename": "/contact.go/SearchCommunity/Find",
+		}).Error(err.Error())
+		return []model.Community{}
+	}
 	for _, v := range conconts {
 		comIds = append(comIds, v.Dstobj)
 	}
@@ -81,30 +98,48 @@ func (service *ContactService) SearchComunity(userId int64) []model.Community {
 	if len(comIds) == 0 {
 		return coms
 	}
-	db_conn.DbClient.In("id", comIds).Find(&coms)
+	err = db_conn.DbClient.In("id", comIds).Find(&coms)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"filename": "/contact.go/SearchComunity/Find",
+		}).Error(err.Error())
+		return []model.Community{}
+	}
 	return coms
 }
 
-func (service *ContactService) SearchComunityIds(userId int64) (comIds []int64) {
-	//todo 获取用户全部群ID
+func (service *ContactService) SearchCommunityIds(userId int64) []int64 {
+	//获取用户全部群ID
 	conconts := make([]model.Contact, 0)
-	comIds = make([]int64, 0)
+	comIds := make([]int64, 0)
 
-	db_conn.DbClient.Where("ownerid = ? and cate = ?", userId, model.CONCAT_CATE_COMUNITY).Find(&conconts)
+	err := db_conn.DbClient.Where("ownerid = ? and cate = ?", userId, model.CONCAT_CATE_COMUNITY).Find(&conconts)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"filename": "/contact.go/SearchCommunity/Find",
+		}).Error(err.Error())
+		return comIds
+	}
 	for _, v := range conconts {
 		comIds = append(comIds, v.Dstobj)
 	}
 	return comIds
 }
 
-//加群
+//add Group
 func (service *ContactService) JoinCommunity(userId, comId int64) error {
 	cot := model.Contact{
 		Ownerid: userId,
 		Dstobj:  comId,
 		Cate:    model.CONCAT_CATE_COMUNITY,
 	}
-	db_conn.DbClient.Get(&cot)
+	_, err := db_conn.DbClient.Get(&cot)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"filename": "/contact.go/JoinCommunity/Get",
+		}).Error(err.Error())
+		return err
+	}
 	if cot.Id == 0 {
 		cot.Createat = time.Now()
 		_, err := db_conn.DbClient.InsertOne(cot)
@@ -114,15 +149,15 @@ func (service *ContactService) JoinCommunity(userId, comId int64) error {
 	}
 }
 
-//建群
-func (service *ContactService) CreateCommunity(comm model.Community) (ret model.Community, err error) {
+//create Group
+func (service *ContactService) CreateCommunity(comm model.Community) (model.Community, error) {
 	if len(comm.Name) == 0 {
-		err = errors.New("缺少群名称")
-		return ret, err
+		err := errors.New("缺少群名称")
+		return model.Community{}, err
 	}
 	if comm.Ownerid == 0 {
-		err = errors.New("请先登录")
-		return ret, err
+		err := errors.New("请先登录")
+		return model.Community{}, err
 	}
 	com := model.Community{
 		Ownerid: comm.Ownerid,
@@ -135,10 +170,21 @@ func (service *ContactService) CreateCommunity(comm model.Community) (ret model.
 	} else {
 		comm.Createat = time.Now()
 		session := db_conn.DbClient.NewSession()
-		session.Begin()
+		err = session.Begin()
+		if err != nil {
+			log.WithFields(log.Fields{
+				"filename": "/contact.go/CreateCommunity/sessionBegin",
+			}).Error(err.Error())
+			return model.Community{}, err
+		}
 		_, err = session.InsertOne(&comm)
 		if err != nil {
-			session.Rollback()
+			err := session.Rollback()
+			if err != nil {
+				log.WithFields(log.Fields{
+					"filename": "/contact.go/CreateCommunity/Rollback",
+				}).Error(err.Error())
+			}
 			return com, err
 		}
 		_, err = session.InsertOne(
@@ -149,19 +195,35 @@ func (service *ContactService) CreateCommunity(comm model.Community) (ret model.
 				Createat: time.Now(),
 			})
 		if err != nil {
-			session.Rollback()
+			err = session.Rollback()
+			if err != nil {
+				log.WithFields(log.Fields{
+					"filename": "/contact.go/CreateCommunity/Rollback",
+				}).Error(err.Error())
+			}
 		} else {
-			session.Commit()
+			err = session.Commit()
+			if err != nil {
+				log.WithFields(log.Fields{
+					"filename": "/contact.go/CreateCommunity/Commit",
+				}).Error(err.Error())
+			}
 		}
 		return com, err
 	}
 }
 
-//查找好友
+//find Friend
 func (service *ContactService) SearchFriend(userId int64) []model.User {
 	conconts := make([]model.Contact, 0)
 	objIds := make([]int64, 0)
-	db_conn.DbClient.Where("ownerid = ? and cate = ?", userId, model.CONCAT_CATE_USER).Find(&conconts)
+	err := db_conn.DbClient.Where("ownerid = ? and cate = ?", userId, model.CONCAT_CATE_USER).Find(&conconts)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"filename": "/contact.go/SearchFriend/Find",
+		}).Error(err.Error())
+		return []model.User{}
+	}
 	for _, v := range conconts {
 		objIds = append(objIds, v.Dstobj)
 	}
@@ -169,6 +231,11 @@ func (service *ContactService) SearchFriend(userId int64) []model.User {
 	if len(objIds) == 0 {
 		return coms
 	}
-	db_conn.DbClient.In("id", objIds).Find(&coms)
+	err = db_conn.DbClient.In("id", objIds).Find(&coms)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"filename": "/contact.go/SearchFriend/Find",
+		}).Error(err.Error())
+	}
 	return coms
 }

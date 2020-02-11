@@ -14,40 +14,51 @@ import (
 	"ginchat/db_conn"
 	"ginchat/model"
 	"ginchat/util"
+
+	log "github.com/sirupsen/logrus"
 )
 
 type UserService struct {
 }
 
-func (s *UserService) Login(mobile, plainpwd string) (user model.User, err error) {
-	//首先通过手机号查询用户
+func (s *UserService) Login(mobile, plainpwd string) (model.User, error) {
 	tmp := model.User{}
-	db_conn.DbClient.Where("mobile = ?", mobile).Get(&tmp)
-	//如果没有找到
+	_, err := db_conn.DbClient.Where("mobile = ?", mobile).Get(&tmp)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"filename": "/userpack.go/Login",
+		}).Error(err.Error())
+		return tmp, err
+	}
 	if tmp.Id == 0 {
-		return tmp, errors.New("该用户不存在")
+		return tmp, errors.New("not Exist User")
 	}
-	//查询到了比对密码
 	if !util.ValidatePasswd(plainpwd, tmp.Salt, tmp.Passwd) {
-		return tmp, errors.New("密码不正确")
+		return tmp, errors.New("wrong Pwd")
 	}
-	//刷新token,安全
 	str := fmt.Sprintf("%d", time.Now().Unix())
 	token := util.MD5Encode(str)
 	tmp.Token = token
-	//返回数据
-	db_conn.DbClient.ID(tmp.Id).Cols("token").Update(&tmp)
+	_, err = db_conn.DbClient.ID(tmp.Id).Cols("token").Update(&tmp)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"filename": "/userpack.go/Login",
+		}).Error(err.Error())
+	}
 	return tmp, nil
 }
 
-func (s *UserService) Register(mobile, plainpwd, nickname, avatar, sex string) (user model.User, err error) {
+func (s *UserService) Register(mobile, plainpwd, nickname, avatar, sex string) (model.User, error) {
 	tmp := model.User{}
-	_, err = db_conn.DbClient.Where("mobile=? ", mobile).Get(&tmp)
+	_, err := db_conn.DbClient.Where("mobile=? ", mobile).Get(&tmp)
 	if err != nil {
+		log.WithFields(log.Fields{
+			"filename": "/userpack.go/Register/Get",
+		}).Error(err.Error())
 		return tmp, err
 	}
 	if tmp.Id > 0 {
-		return tmp, errors.New("该手机号已经注册")
+		return tmp, errors.New("the mobile number has been registered")
 	}
 	tmp.Mobile = mobile
 	tmp.Avatar = avatar
@@ -58,13 +69,21 @@ func (s *UserService) Register(mobile, plainpwd, nickname, avatar, sex string) (
 	tmp.Createat = time.Now()
 	tmp.Token = fmt.Sprintf("%08d", rand.Int31())
 	_, err = db_conn.DbClient.InsertOne(&tmp)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"filename": "/userpack.go/Register/InsertOne",
+		}).Error(err.Error())
+	}
 	return tmp, err
 }
 
-//查找某个用户
-func (s *UserService) Find(userId int64) (user model.User) {
-	//首先通过手机号查询用户
+func (s *UserService) Find(userId int64) model.User {
 	tmp := model.User{}
-	db_conn.DbClient.ID(userId).Get(&tmp)
+	_, err := db_conn.DbClient.ID(userId).Get(&tmp)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"filename": "/userpack.go/Find/Get",
+		}).Error(err.Error())
+	}
 	return tmp
 }

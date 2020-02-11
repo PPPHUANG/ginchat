@@ -19,21 +19,33 @@ var contactService contact.ContactService
 
 func LoadFriend(c *gin.Context) {
 	var arg args.ContactArg
-	c.Bind(&arg)
+	err := c.Bind(&arg)
+	if err != nil {
+		util.RespFail(c, "not Enough Params")
+		return
+	}
 	users := contactService.SearchFriend(arg.Userid)
 	util.RespOkList(c, users, len(users))
 }
 
 func LoadCommunity(c *gin.Context) {
 	var arg args.ContactArg
-	c.Bind(&arg)
-	comunitys := contactService.SearchComunity(arg.Userid)
+	err := c.Bind(&arg)
+	if err != nil {
+		util.RespFail(c, "not Enough Params")
+		return
+	}
+	comunitys := contactService.SearchCommunity(arg.Userid)
 	util.RespOkList(c, comunitys, len(comunitys))
 }
 func JoinCommunity(c *gin.Context) {
 	var arg args.ContactArg
-	c.Bind(&arg)
-	err := contactService.JoinCommunity(arg.Userid, arg.Dstid)
+	err := c.Bind(&arg)
+	if err != nil {
+		util.RespFail(c, "not Enough Params")
+		return
+	}
+	err = contactService.JoinCommunity(arg.Userid, arg.Dstid)
 	//todo 刷新用户的群组信息
 	chat.AddGroupId(arg.Userid, arg.Dstid)
 	if err != nil {
@@ -44,7 +56,11 @@ func JoinCommunity(c *gin.Context) {
 }
 func CreateCommunity(c *gin.Context) {
 	var arg model.Community
-	c.Bind(&arg)
+	err := c.Bind(&arg)
+	if err != nil {
+		util.RespFail(c, "not Enough Params")
+		return
+	}
 	com, err := contactService.CreateCommunity(arg)
 	if err != nil {
 		util.RespFail(c, err.Error())
@@ -54,11 +70,15 @@ func CreateCommunity(c *gin.Context) {
 }
 func AddFriend(c *gin.Context) {
 	var arg args.ContactArg
-	c.Bind(&arg)
-	err := contactService.AddFriend(arg.Userid, arg.Dstid)
+	err := c.Bind(&arg)
+	if err != nil {
+		util.RespFail(c, "not Enough Params")
+		return
+	}
+	err = contactService.AddFriend(arg.Userid, arg.Dstid)
 	if err != nil {
 		util.RespFail(c, err.Error())
 	} else {
-		util.RespOk(c, nil, "好友添加成功")
+		util.RespOk(c, nil, "add Friend Successfully")
 	}
 }

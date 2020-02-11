@@ -35,9 +35,6 @@ func UserRegister(c *gin.Context) {
 	nickname := fmt.Sprintf("user%06d", rand.Int31())
 	avatar := ""
 	sex := model.SEX_UNKNOW
-	fmt.Println(123)
-	fmt.Println(mobile)
-	fmt.Println(plainpwd)
 	userInfo, err := userService.Register(mobile, plainpwd, nickname, avatar, sex)
 	if err != nil {
 		util.RespFail(c, err.Error())

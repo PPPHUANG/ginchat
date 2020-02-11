@@ -39,6 +39,7 @@ func UploadLocal(c *gin.Context) {
 	if err != nil {
 		log.Error("Upload File Error")
 		util.RespFail(c, err.Error())
+		return
 	}
 	suffix := ".png"
 	//如果前端文件名称包含后缀 xx.xx.png
