@@ -30,8 +30,6 @@ func Register() (*gin.Engine, error) {
 	router := gin.Default()
 
 	//指定目录的静态文件
-	//http.Handle("/asset/", http.FileServer(http.Dir(".")))
-	//http.Handle("/mnt/", http.FileServer(http.Dir(".")))
 	router.Static("/assets/", "./assets")
 	router.Static("/mnt/", "./mnt")
 
@@ -70,6 +68,7 @@ func Register() (*gin.Engine, error) {
 	{
 		chatRT.POST("", chat.Chat)
 	}
+
 	attachRT := router.Group("/attach")
 	{
 		attachRT.POST("/upload", attach.Upload)
@@ -107,12 +106,11 @@ func RegisterView(router *gin.Engine) {
 	if nil != err {
 		log.Fatal(err)
 	}
-	//通过for循环做好映射
 	for _, v := range tpl.Templates() {
 		tplname := v.Name()
 		fmt.Println("Template    " + v.Name())
 		router.GET(tplname, func(ctx *gin.Context) {
-			fmt.Println("parse  " + v.Name() + "==" + tplname)
+			//fmt.Println("parse  " + v.Name() + "==" + tplname)
 			err := tpl.ExecuteTemplate(ctx.Writer, tplname, nil)
 			if err != nil {
 				log.Fatal(err.Error())

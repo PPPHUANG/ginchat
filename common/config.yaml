@@ -12,6 +12,8 @@ server:
   log_path: "./logger/ginchat/"
   # HTTP log output stdout
   log_stdout: false
+  # file upload path
+  attach_path: "./mnt"
   # server mode:0 INFINITY、 1 minio、2 INFINITY & minio
   mode: 0
   # server debug
@@ -19,3 +21,8 @@ server:
 mysql:
   ip: 127.0.0.1
   port: 3306
+  user: root
+  pwd: root
+  db_name: chat
+  show_sql: true
+  max_open_conns : 2

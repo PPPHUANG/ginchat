@@ -14,13 +14,17 @@ var ServerDebug bool
 
 var MysqlIp string
 var MysqlPort int
+var DBName string
+var MysqlUser string
+var MysqlPwd string
+var MaxOpenConns int
+var ShowSQL bool
 
 //日志配置
 var LogPath string
 
 var LogStdout bool
 
-//数据表配置
-var (
-	DBName = "chat" //表
-)
+//上传文件配置
+
+var AttachPath string
