@@ -79,7 +79,7 @@ type Node struct {
 }
 
 //映射关系表
-var clientMap map[int64]*Node = make(map[int64]*Node, 0)
+var clientMap = make(map[int64]*Node, 0)
 
 var rwlocker sync.RWMutex
 
@@ -268,6 +268,6 @@ var userService user.UserService
 
 func checkToken(userId int64, token string) bool {
 	//从数据库里面查询并比对
-	userInfo := userService.Find(userId)
-	return userInfo.Token == token
+	userInfo, ok := userService.Find(userId)
+	return ok && userInfo.Token == token
 }

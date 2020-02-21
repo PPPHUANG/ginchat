@@ -77,13 +77,13 @@ func (s *UserService) Register(mobile, plainpwd, nickname, avatar, sex string) (
 	return tmp, err
 }
 
-func (s *UserService) Find(userId int64) model.User {
+func (s *UserService) Find(userId int64) (model.User, bool) {
 	tmp := model.User{}
-	_, err := db_conn.DbClient.ID(userId).Get(&tmp)
+	find, err := db_conn.DbClient.ID(userId).Get(&tmp)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"filename": "/userpack.go/Find/Get",
 		}).Error(err.Error())
 	}
-	return tmp
+	return tmp, find
 }
