@@ -155,20 +155,21 @@ func recvproc(node *Node) {
 			log.Println(err.Error())
 			return
 		}
-		dispatch(data)
+		//dispatch(data)
 		//把消息广播到局域网
-		//broadMsg(data)
+
+		broadMsg(data)
 		log.Printf("[ws]<=%s\n", data)
 	}
 }
 
 func init() {
-	//go udpsendproc()
-	//go udprecvproc()
+	go udpsendproc()
+	go udprecvproc()
 }
 
 //用来存放发送的要广播的数据
-var udpsendchan chan []byte = make(chan []byte, 1024)
+var udpsendchan = make(chan []byte, 1024)
 
 //将消息广播到局域网
 func broadMsg(data []byte) {
