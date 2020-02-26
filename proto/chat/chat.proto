@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package chat;
+
+// The chat service definition.
+service Chatter {
+  // Sends a chatMessage
+  rpc sendMessage (ChatRequest) returns (ChatReply) {}
+}
+
+
+message ChatRequest {
+  bytes mes = 1;
+}
+
+
+message ChatReply {
+  int32 code = 1;
+  string mes = 2;
+}

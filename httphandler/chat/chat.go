@@ -8,7 +8,6 @@ package chat
 import (
 	"encoding/json"
 	"log"
-	"net"
 	"net/http"
 	"strconv"
 	"sync"
@@ -17,11 +16,14 @@ import (
 	"github.com/gorilla/websocket"
 	"gopkg.in/fatih/set.v0"
 
+	"ginchat/client"
+	"ginchat/common"
 	"ginchat/httphandlerpack/contact"
 	"ginchat/httphandlerpack/user"
 )
 
 var contactService contact.ContactService
+var userService  user.UserService
 
 const (
 	CMD_SINGLE_MSG = 10
@@ -112,6 +114,8 @@ func Chat(c *gin.Context) {
 	rwlocker.Lock()
 	clientMap[userId] = node
 	rwlocker.Unlock()
+	//存储用户id => host
+	userService.SaveHost(id)
 	//完成发送逻辑
 	go sendproc(node)
 	//完成接收逻辑
@@ -155,83 +159,24 @@ func recvproc(node *Node) {
 			log.Println(err.Error())
 			return
 		}
-		//dispatch(data)
-		//把消息广播到局域网
-
-		broadMsg(data)
+		//Dispatch(data)
+		BroadMsg(data)
 		log.Printf("[ws]<=%s\n", data)
 	}
 }
 
 func init() {
-	go udpsendproc()
-	go udprecvproc()
+	go rpcSendProc()
 }
 
-//用来存放发送的要广播的数据
-var udpsendchan = make(chan []byte, 1024)
-
-//将消息广播到局域网
-func broadMsg(data []byte) {
-	udpsendchan <- data
+type SendData struct {
+	IP string
+	Data []byte
 }
+var rpcSendChan = make(chan *SendData, 1024)
 
-//完成udp数据的发送协程
-func udpsendproc() {
-	log.Println("start udpsendproc")
-	//todo 使用udp协议拨号
-	con, err := net.DialUDP("udp", nil,
-		&net.UDPAddr{
-			IP:   net.IPv4(192, 168, 0, 255),
-			Port: 3000,
-		})
-	defer con.Close()
-	if err != nil {
-		log.Println(err.Error())
-		return
-	}
-	//通过的到的con发送消息
-	//con.Write()
-	for {
-		select {
-		case data := <-udpsendchan:
-			_, err = con.Write(data)
-			if err != nil {
-				log.Println(err.Error())
-				return
-			}
-		}
-	}
-}
-
-//完成upd接收并处理功能
-func udprecvproc() {
-	log.Println("start udprecvproc")
-	//监听udp广播端口
-	con, err := net.ListenUDP("udp", &net.UDPAddr{
-		IP:   net.IPv4zero,
-		Port: 3000,
-	})
-	defer con.Close()
-	if err != nil {
-		log.Println(err.Error())
-	}
-	//处理端口发过来的数据
-	for {
-		var buf [512]byte
-		n, err := con.Read(buf[0:])
-		if err != nil {
-			log.Println(err.Error())
-			return
-		}
-		//直接数据处理
-		dispatch(buf[0:n])
-	}
-	log.Println("stop updrecvproc")
-}
-
-//后端调度逻辑处理
-func dispatch(data []byte) {
+//推送消息或者发送到对应的节点上
+func BroadMsg(data []byte) {
 	//解析data为message
 	msg := Message{}
 	err := json.Unmarshal(data, &msg)
@@ -239,6 +184,51 @@ func dispatch(data []byte) {
 		log.Println(err.Error())
 		return
 	}
+
+	//判断数据是否是当前节点
+	if ip,isLocal := localHost(strconv.FormatInt(msg.Dstid,10));isLocal {
+		Dispatch(data,&msg)
+	} else {
+		rpcSendChan <- &SendData{
+			ip,
+			data,
+		}
+	}
+}
+
+
+func localHost(usrId string)(string,bool)  {
+	ip := userService.GetHost(usrId)
+	if common.ServerIp != ip {
+		return ip,false
+	}
+	return ip,true
+}
+
+//完成rpc数据的发送协程
+func rpcSendProc() {
+	for {
+		select {
+		case data := <-rpcSendChan:
+			err := client.SendMessage(data.IP,data.Data)
+			if err != nil {
+				//TODO 重传或者其他处理
+				log.Println(err.Error())
+				return
+			}
+		}
+	}
+}
+
+//后端调度逻辑处理
+func Dispatch(data []byte,msg *Message) {
+	//解析data为message
+	//msg := Message{}
+	//err := json.Unmarshal(data, &msg)
+	//if err != nil {
+	//	log.Println(err.Error())
+	//	return
+	//}
 	//根据cmd对逻辑进行处理
 	switch msg.Cmd {
 	case CMD_SINGLE_MSG:
@@ -265,10 +255,11 @@ func sendMsg(userId int64, msg []byte) {
 	}
 }
 
-var userService user.UserService
+//var userService user.UserService
 
 func checkToken(userId int64, token string) bool {
 	//从数据库里面查询并比对
 	userInfo, ok := userService.Find(userId)
 	return ok && userInfo.Token == token
 }
+

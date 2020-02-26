@@ -4,7 +4,7 @@
 server:
   # Protocol (http or https)
   protocol: http
-  ip: 127.0.0.1
+  ip: 192.168.0.100
   port: 8080
   # Redirect to correct domain if host header does not match domain
   enforce_domain: true
@@ -15,6 +15,12 @@ server:
   attach_path: "./mnt"
   # server debug
   debug: false
+  nodes:
+    - "192.168.0.100"
+    - "10.211.55.3"
+rpc:
+  port: 8090
+
 mysql:
   ip: 127.0.0.1
   port: 3306
@@ -23,3 +29,6 @@ mysql:
   db_name: chat
   show_sql: true
   max_open_conns : 2
+redis:
+  ip: 10.211.55.3
+  port: 6666

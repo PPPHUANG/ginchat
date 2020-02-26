@@ -70,6 +70,7 @@ func Register() (*gin.Engine, error) {
 
 	attachRT := router.Group("/attach")
 	{
+		//多节点时对象信息需要放到对象存储里
 		attachRT.POST("/upload", attach.Upload)
 	}
 	return router, nil

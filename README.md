@@ -18,9 +18,11 @@
 - [ ] 用户状态
 - [ ] 获取历史信息
 - [ ] 优化消息推送问题，用户不在线，用户不在聊天页面等情况
-- [ ] 优化多节点部署的方案，不使用UDP广播，可能选择节点通过RPC通信
+- [x] 优化多节点部署的方案，不使用UDP广播，可能选择节点通过RPC通信
 - [ ] 解决网络丢包问题，ACK响应机制，重传机制，数据包校验
 - [ ] 优化重传机制可能导致消息重复的问题，唯一messageId
+- [ ] 强踢非活跃连接
+- [ ] 文件类使用对象存储
 
 
 # 安装方法
@@ -34,7 +36,7 @@ git clone git@github.com:PPPHUANG/ginchat.git
 server:
   # Protocol (http or https)
   protocol: http
-  ip: 127.0.0.1
+  ip: 127.0.0.1                            //多节点时不能使用本地回环地址
   port: 8080
   enforce_domain: true
   log_path: "./logger/ginchat/"             //日志路径
@@ -43,7 +45,12 @@ server:
   # file upload path
   attach_path: "./mnt"                      //文件上传缓存路径
   # server debug
-  debug: false                              
+  debug: false         
+  nodes:                                    //节点IP
+      - "192.168.0.100"
+      - "192.168.0.101"                  
+rpc:
+  port: 8090                                //rpc监听端口
 mysql:                                      //数据库配置自行修改
   ip: 127.0.0.1
   port: 3306
@@ -52,6 +59,9 @@ mysql:                                      //数据库配置自行修改
   db_name: chat
   show_sql: true
   max_open_conns : 2
+redis:
+  ip: 192.168.0.100                         //多节点时为redis-proxy入口
+  port: 6666
 ```
 ## 3.编译运行
 ```

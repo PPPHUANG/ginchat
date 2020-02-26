@@ -9,6 +9,10 @@ package common
 var ServerPort int
 var ServerIp string
 var ServerMode int
+var RpcPort int
+var RedisIp string
+var RedisPort int
+var Nodes []string
 
 var ServerDebug bool
 

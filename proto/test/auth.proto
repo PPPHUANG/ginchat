@@ -1,0 +1,202 @@
+syntax = "proto3";
+
+package authServerApi;
+
+service AuthOperate {
+    // 增加Action
+    rpc AddAction(ActionRequest) returns (ActionResponseItem);
+    // 移除Action
+    rpc DeleteAction(ActionRequest) returns (ActionResponseItem);
+    // 移除Action
+    rpc DeleteActionByRole(RoleRequest) returns (ActionResponseItem);
+
+    // 查询Action
+    rpc ValidateAction(ValidateActionRequest) returns (ValidateActionResponse);
+
+    rpc ValidatePolicy(RoleAction) returns (ActionResponseItem);
+
+    rpc ValidateRole(RoleAction) returns(ActionResponseItem);
+
+    //增加用户
+    rpc AddUser(UserRequest) returns (UserResponse);
+    //移除用户
+    rpc DeleteUser(UserRequest) returns (UserResponse);
+    rpc DeleteRole(UserRequest) returns (UserResponse);
+    rpc DeleteRoleWild(UserRequest) returns (UserResponse);
+
+    rpc DeleteRoleExceptIt(ResourceRoles) returns (ActionResponseItem);
+
+    //列举角色
+    rpc ListRolesForResource(RolesForResourceRequest) returns (RolesResponse);
+    rpc ListRolesForUser(RolesForUserRequest) returns (RolesForUserResponse);
+    //列举用户
+    rpc ListUsersForRole(UsersForRoleRequest) returns (UsersForRoleResponse);
+    //列举Action
+    rpc ListActionsForResource(ActionsForResourceRequest) returns (ActionsResponse);
+
+    rpc ListActionsForRole(ActionsForRoleRequest) returns (ActionsResponse);
+
+    rpc ListResourceForUserAction(UserActionWithPage) returns (ResultWithPage);
+
+    rpc ListRolesForUserResource(UserResource) returns (RolesResponse);
+
+    rpc ListResourceForUserRoleOrAction(UserRoleOrActionResourceWithPage) returns (ResultWithPage);
+
+    rpc ListUserForResource(ResourceWithPage) returns (ResultWithPage);
+
+    rpc ListResourceRoleForUserAction(UserActionWithPage) returns (ResourceRoleWithPage);
+}
+
+message RoleRequest{
+    string role = 1;
+}
+
+message RoleAction{
+    string resource = 1;
+    string role = 2;
+    string action = 3;
+}
+
+message ResourceRoles{
+    string resource = 1;
+    repeated string roles = 2;
+}
+
+
+message UserResource {
+    string user = 1;
+    string resource = 2;
+}
+
+message ResourceWithPage{
+    string resource = 1;
+    int32  page = 2;
+    int32  pageSize = 3;
+}
+
+message UserActionWithPage{
+    string user = 1;
+    string action = 2;
+    int32  page = 3;
+    int32  pageSize = 4;
+}
+
+message UserRoleOrActionResourceWithPage{
+    string user = 1;
+    string role = 2;
+    repeated string actions = 3;
+    int32  page = 4;
+    int32  pageSize = 5;
+}
+
+message ResultWithPage{
+    repeated string result = 1;
+    int32 total = 2;
+}
+
+message ResourceRole{
+    string resource = 1;
+    string role = 2;
+}
+
+message ResourceRoleWithPage{
+    repeated ResourceRole result = 1;
+    int32 total = 2;
+}
+
+message UserAction{
+    string id=1;
+    string resource = 2;
+    string user = 3;
+    string action = 4;
+}
+
+message ActionResponseItem {
+    bool result = 1;
+    string msg = 2;
+}
+
+message ResultResponseItem{
+    string id = 1;
+    bool result = 2;
+    string msg = 3;
+}
+
+// 请求与响应
+message ActionRequest {
+    repeated RoleAction actionRequestItems = 1;
+}
+
+message ValidateActionRequest {
+    repeated UserAction actionRequestItems = 1;
+}
+
+message ValidateActionResponse {
+    repeated ResultResponseItem actionResponseItems = 1;
+}
+
+message UserRole {
+    string id = 1;
+    string user = 2;
+    string role = 3;
+}
+
+// 请求与响应
+message UserRequest {
+    repeated UserRole userRequestItems = 1;
+}
+
+message UserResponse {
+    repeated ResultResponseItem userResponseItems = 1;
+}
+
+message RolesForUserRequest {
+    string user = 1;
+}
+
+message RolesForUserResponse {
+    repeated string roles = 1;
+}
+
+message RolesResponse {
+    repeated string roles = 1;
+}
+
+message UsersForRoleRequest {
+    string role = 1;
+}
+
+message UsersForRoleResponse {
+    repeated string users = 1;
+}
+
+message ResourceByID {
+    string id = 1;
+    string resource = 2;
+}
+
+message ActionsForResourceRequest {
+    repeated ResourceByID resources = 1;
+}
+
+message RolesForResourceRequest {
+    string resource = 1;
+}
+
+message RoleByID {
+    string id = 1;
+    string role = 2;
+}
+
+message ActionsForRoleRequest {
+    repeated RoleByID roles = 1;
+}
+
+message ActionResponse {
+    string id = 1;
+    repeated RoleAction actions = 2;
+}
+
+message ActionsResponse {
+    repeated ActionResponse actionResponseList = 1;
+}

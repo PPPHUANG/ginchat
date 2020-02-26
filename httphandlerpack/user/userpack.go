@@ -11,6 +11,7 @@ import (
 	"math/rand"
 	"time"
 
+	"ginchat/common"
 	"ginchat/db_conn"
 	"ginchat/model"
 	"ginchat/util"
@@ -86,4 +87,20 @@ func (s *UserService) Find(userId int64) (model.User, bool) {
 		}).Error(err.Error())
 	}
 	return tmp, find
+}
+
+func (s *UserService) SaveHost(userId string) bool {
+	err := db_conn.RedisClient.Set(userId, common.ServerIp, 0).Err()
+	if err != nil {
+		return false
+	}
+	return true
+}
+
+func (s *UserService) GetHost(userId string) string {
+	userRedis, err := db_conn.RedisClient.Get(userId).Result()
+	if err != nil {
+		return ""
+	}
+	return userRedis
 }

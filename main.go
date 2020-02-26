@@ -22,10 +22,20 @@ func main() {
 	// 初始化系统日志
 	logger.LogInit(common.LogPath)
 
-	//初始化Es的客户端
+	//初始化mysql的客户端
 	if err := db_conn.InitMysqlClient(); err != nil {
 		fmt.Printf("InitMysqlClient：%s", err.Error())
 		os.Exit(1)
+	}
+
+	//初始化Redis的客户端
+	if err := db_conn.InitRedisClient(); err != nil {
+		fmt.Printf("InitRedisClient：%s", err.Error())
+		os.Exit(1)
+	}
+
+	if len(common.Nodes) > 1 {
+		go router.ListenRpc()
 	}
 	r, _ := router.Register()
 	r.Use(gin.Logger())
