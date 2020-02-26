@@ -96,6 +96,7 @@ POST /attach/upload                 附件上传
 │   ├── images
 │   ├── js
 │   └── plugins
+├── client                      grpc客户端
 ├── common                      配置管理
 ├── db_conn                     数据库连接
 ├── httphandler                 Controller
@@ -110,7 +111,9 @@ POST /attach/upload                 附件上传
 │   └── ginchat
 ├── mnt                         文件缓存目录
 ├── model                       model
+├── proto                       proto文件
 ├── router                      路由
+├── service                     grpc服务
 ├── util                        工具类
 ├── version                     版本接口
 └── view                        前端
