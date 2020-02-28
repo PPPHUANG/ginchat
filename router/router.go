@@ -58,8 +58,8 @@ func Register() (*gin.Engine, error) {
 	{
 		contactRT.POST("/loadcommunity/", contact.LoadCommunity)
 		contactRT.POST("/loadfriend", contact.LoadFriend)
-		contactRT.GET("/joincommunity", contact.JoinCommunity)
-		contactRT.GET("/createcommunity", contact.CreateCommunity)
+		contactRT.POST("/joincommunity", contact.JoinCommunity)
+		contactRT.POST("/createcommunity", contact.CreateCommunity)
 		contactRT.POST("/addfriend", contact.AddFriend)
 	}
 

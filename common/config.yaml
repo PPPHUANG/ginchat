@@ -15,9 +15,11 @@ server:
   attach_path: "./mnt"
   # server debug
   debug: false
+  # heart beat second
+  heart_beat: 600
   nodes:
     - "192.168.0.100"
-    - "10.211.55.3"
+    - "192.168.0.101"
 rpc:
   port: 8090
 
@@ -30,5 +32,5 @@ mysql:
   show_sql: true
   max_open_conns : 2
 redis:
-  ip: 10.211.55.3
+  ip: 127.0.0.1
   port: 6666

@@ -97,6 +97,14 @@ func (s *UserService) SaveHost(userId string) bool {
 	return true
 }
 
+func (s *UserService) RemoveHost(userId string) bool {
+	err := db_conn.RedisClient.Del(userId).Err()
+	if err != nil {
+		return false
+	}
+	return true
+}
+
 func (s *UserService) GetHost(userId string) string {
 	userRedis, err := db_conn.RedisClient.Get(userId).Result()
 	if err != nil {

@@ -13,6 +13,7 @@ var RpcPort int
 var RedisIp string
 var RedisPort int
 var Nodes []string
+var HeartBeat int
 
 var ServerDebug bool
 
