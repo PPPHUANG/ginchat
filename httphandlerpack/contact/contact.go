@@ -209,6 +209,8 @@ func (service *ContactService) CreateCommunity(comm model.Community) (model.Comm
 				}).Error(err.Error())
 			}
 		}
+		//将用户添加到redis中群集合里
+		_ = AddUserToCommunityRedis(comm.Id, comm.Ownerid)
 		return com, err
 	}
 }
@@ -238,4 +240,50 @@ func (service *ContactService) SearchFriend(userId int64) []model.User {
 		}).Error(err.Error())
 	}
 	return coms
+}
+
+func (service *ContactService) GetCommunityUsers(communityId int64) []string {
+	//todo 从redis中获取群组set的的值返回
+	setId := "Community" + string(communityId)
+	userIds, err := db_conn.RedisClient.SMembers(setId).Result()
+	if err != nil {
+		log.WithFields(log.Fields{
+			"filename":    "/contact.go/GetCommunityUsers/SMembers",
+			"communityId": communityId,
+		}).Error(err.Error())
+		return []string{}
+	}
+	return userIds
+}
+
+func InitCommunityRedis() error {
+	conconts := make([]model.Contact, 0)
+	err := db_conn.DbClient.Where("cate = ?", model.CONCAT_CATE_COMUNITY).Find(&conconts)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"filename": "/contact.go/InitCommunityRedis/Where",
+		}).Error(err.Error())
+		return err
+	}
+	for _, v := range conconts {
+		setId := "Community" + string(v.Dstobj)
+		_, err = db_conn.RedisClient.SAdd(setId, v.Ownerid).Result()
+		if err != nil {
+			log.WithFields(log.Fields{
+				"filename": "/contact.go/InitCommunityRedis/SAdd",
+			}).Error(err.Error())
+		}
+	}
+	return err
+}
+
+func AddUserToCommunityRedis(communityId int64, userId int64) error {
+	setId := "Community" + string(communityId)
+	_, err := db_conn.RedisClient.SAdd(setId, userId).Result()
+	if err != nil {
+		log.WithFields(log.Fields{
+			"filename": "/contact.go/AddUserToCommunityRedis/SAdd",
+		}).Error(err.Error())
+	}
+	return err
 }

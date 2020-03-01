@@ -9,7 +9,6 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"ginchat/args"
-	"ginchat/httphandler/chat"
 	"ginchat/httphandlerpack/contact"
 	"ginchat/model"
 	"ginchat/util"
@@ -46,8 +45,9 @@ func JoinCommunity(c *gin.Context) {
 		return
 	}
 	err = contactService.JoinCommunity(arg.Userid, arg.Dstid)
-	//todo 刷新用户的群组信息
-	chat.AddGroupId(arg.Userid, arg.Dstid)
+	//todo 刷洗redis中群组的成员信息
+	//chat.AddGroupId(arg.Userid, arg.Dstid)
+	_ = contact.AddUserToCommunityRedis(arg.Dstid, arg.Userid)
 	if err != nil {
 		util.RespFail(c, err.Error())
 	} else {

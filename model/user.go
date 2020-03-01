@@ -29,3 +29,21 @@ type User struct {
 	Memo     string    `xorm:"varchar(140)" form:"memo" json:"memo"`     // 什么角色
 	Createat time.Time `xorm:"datetime" form:"createat" json:"createat"` // 什么角色
 }
+
+//好友聊天信息表
+type MessageUserToUser struct {
+	Id           int64     `xorm:"pk autoincr bigint(20)" form:"id" json:"id"`
+	FromUserId   int64     `xorm:"bigint(20)" form:"fromuserid" json:"fromuserid"`
+	FromUserName string    `xorm:"varchar(30)" form:"fromusername" json:"fromusername"`
+	ToUserId     int64     `xorm:"bigint(20)" form:"touserid" json:"touserid"`
+	Content      string    `xorm:"text" form:"content" json:"content"`
+	State        uint8     `xorm:"tinyint" form:"state" json:"state"`
+	CreateTime   time.Time `xorm:"datetime" form:"creattime" json:"creattime"`
+	TypeId       uint8     `xorm:"tinyint" form:"typeid" json:"typeid"`
+}
+
+//消息类型表
+type MessageType struct {
+	Id   int64  `xorm:"pk autoincr bigint(20)" form:"id" json:"id"`
+	Name string `xorm:"varchar(30)" form:"name" json:"name"`
+}

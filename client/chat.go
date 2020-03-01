@@ -18,7 +18,7 @@ import (
 	pb "ginchat/proto/chat"
 )
 
-func SendMessage(ip string, data []byte) error{
+func SendMessage(messageId int64, uIds []int64, ip string, data []byte) error {
 	//TODO 异常情况处理 redis挂了的问题 向所有节点发送，获取不到当前用户节点的连接 向所有节点发送
 	conn, err := grpc.Dial(fmt.Sprintf("%s:%d", ip, common.RpcPort), grpc.WithInsecure())
 	defer conn.Close()
@@ -26,11 +26,11 @@ func SendMessage(ip string, data []byte) error{
 		log.Fatalf("did not connect: %v", err)
 	}
 	c := pb.NewChatterClient(conn)
-	r, err := c.SendMessage(context.Background(), &pb.ChatRequest{Mes: data})
+	r, err := c.SendMessage(context.Background(), &pb.ChatRequest{MessageId: messageId, UserIds: uIds, Mes: data})
 	if err != nil {
 		log.Fatalf("could not greet: %v", err)
 	}
-	if r.Code != 200|| r.Mes != "" {
+	if r.Code != 200 || r.Mes != "" {
 		return errors.New(r.Mes)
 	}
 	return nil

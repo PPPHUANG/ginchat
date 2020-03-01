@@ -26,3 +26,36 @@ type Community struct {
 const (
 	COMMUNITY_CATE_COM = 0x01
 )
+
+//群消息表
+type CommunityMessage struct {
+	Id              int64     `xorm:"pk autoincr bigint(20)" form:"id" json:"id"`
+	Content         string    `xorm:"text" form:"content" json:"content"`
+	FromId          int64     `xorm:"bigint(20)" form:"fromid" json:"fromid"`
+	FromUName       string    `xorm:"varchar(30)" form:"fromuname" json:"fromuname"`
+	CreateTime      time.Time `xorm:"datetime" form:"creattime" json:"creattime"`
+	UserCommunityId int64     `xorm:"bigint(20)" form:"usercommunityid" json:"usercommunityid"`
+	TypeId          uint8     `xorm:"tinyint" form:"typeid" json:"typeid"`
+}
+
+//群消息关联表
+type CommunityMessageToUser struct {
+	Id         int64     `xorm:"pk autoincr bigint(20)" form:"id" json:"id"`
+	UserId     int64     `xorm:"bigint(20)" form:"userid" json:"userid"`
+	ComMesId   int64     `xorm:"bigint(20)" form:"commesid" json:"commesid"`
+	State      uint8     `xorm:"tinyint" form:"state" json:"state"`
+	CreateTime time.Time `xorm:"datetime" form:"creattime" json:"creattime"`
+}
+
+//群内私聊消息关联表
+type CommunityMessageUserToUser struct {
+	Id              int64     `xorm:"pk autoincr bigint(20)" form:"id" json:"id"`
+	FromUserId      int64     `xorm:"bigint(20)" form:"fromuserid" json:"fromuserid"`
+	FromUserName    string    `xorm:"varchar(30)" form:"fromusername" json:"fromusername"`
+	ToUserId        int64     `xorm:"bigint(20)" form:"touserid" json:"touserid"`
+	Content         string    `xorm:"text" form:"content" json:"content"`
+	State           uint8     `xorm:"tinyint" form:"state" json:"state"`
+	CreateTime      time.Time `xorm:"datetime" form:"creattime" json:"creattime"`
+	UserCommunityId int64     `xorm:"bigint(20)" form:"usercommunityid" json:"usercommunityid"`
+	TypeId          uint8     `xorm:"tinyint" form:"typeid" json:"typeid"`
+}

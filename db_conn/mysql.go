@@ -27,7 +27,7 @@ func InitMysqlClient() (err error) {
 	}
 	DbClient.ShowSQL(common.ShowSQL)
 	DbClient.SetMaxOpenConns(common.MaxOpenConns)
-	err = DbClient.Sync2(new(model.User), new(model.Contact), new(model.Community))
+	err = DbClient.Sync2(new(model.User), new(model.Contact), new(model.Community), new(model.CommunityMessage), new(model.CommunityMessageToUser), new(model.CommunityMessageUserToUser), new(model.MessageUserToUser), new(model.MessageType))
 	if err != nil {
 		panic(err.Error())
 	}

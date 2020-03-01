@@ -14,6 +14,7 @@ import (
 
 	"ginchat/common"
 	"ginchat/db_conn"
+	"ginchat/httphandlerpack/contact"
 	"ginchat/logger"
 	"ginchat/router"
 )
@@ -31,6 +32,12 @@ func main() {
 	//初始化Redis的客户端
 	if err := db_conn.InitRedisClient(); err != nil {
 		fmt.Printf("InitRedisClient：%s", err.Error())
+		os.Exit(1)
+	}
+
+	//群组消息初始化
+	if err := contact.InitCommunityRedis(); err != nil {
+		fmt.Printf("InitCommunityRedis：%s", err.Error())
 		os.Exit(1)
 	}
 

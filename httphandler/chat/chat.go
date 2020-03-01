@@ -25,12 +25,6 @@ import (
 var contactService contact.ContactService
 var userService user.UserService
 
-const (
-	CMD_SINGLE_MSG = 10
-	CMD_ROOM_MSG   = 11
-	CMD_HEART      = 0
-)
-
 //映射关系表
 var clientMap = make(map[int64]*Node, 0)
 
@@ -52,18 +46,18 @@ func Chat(c *gin.Context) {
 		return
 	}
 	node := &Node{
-		Uid:           id,
+		Uid:           userId,
 		Conn:          conn,
-		DataQueue:     make(chan []byte, 50),
+		DataQueue:     make(chan *Data, 50),
 		GroupSets:     set.New(set.ThreadSafe),
 		HeartBeatChan: make(chan bool, 50),
 		WRChan:        make(chan bool, 1),
 	}
 	//获取用户全部群Id
-	comIds := contactService.SearchCommunityIds(userId)
-	for _, v := range comIds {
-		node.GroupSets.Add(v)
-	}
+	//comIds := contactService.SearchCommunityIds(userId)
+	//for _, v := range comIds {
+	//	node.GroupSets.Add(v)
+	//}
 	//userId和node形成绑定关系
 	rwlocker.Lock()
 	clientMap[userId] = node
@@ -77,7 +71,6 @@ func Chat(c *gin.Context) {
 	// 心跳检测
 	go node.HeartBeat()
 	log.Printf("<-%d\n", userId)
-	sendMsg(userId, []byte("hello,world!"))
 }
 
 //添加新的群ID到用户的groupSet中
@@ -97,10 +90,10 @@ func init() {
 	go rpcSendProc()
 }
 
-var rpcSendChan = make(chan *SendData, 1024)
+var rpcSendChan = make(chan *RpcSendData, 1024)
 
 //推送消息或者发送到对应的节点上
-func BroadMsg(data []byte) {
+func BroadMsg(data []byte, fromAnotherNode bool) {
 	//解析data为message json解码可以优化为滴滴开源的 Json-iterator
 	msg := Message{}
 	err := json.Unmarshal(data, &msg)
@@ -108,18 +101,35 @@ func BroadMsg(data []byte) {
 		log.Println(err.Error())
 		return
 	}
+	//写消息到消息表
+	if !fromAnotherNode {
+		mesId := msg.Save()
+		msg.Id = mesId
+	}
 
-	//判断数据是否是当前节点
-	if ip, isLocal := localHost(strconv.FormatInt(msg.Dstid, 10)); isLocal {
-		Dispatch(data, &msg)
-	} else {
-		rpcSendChan <- &SendData{
-			IP:   ip,
-			Data: data,
+	Dispatch(&Data{&msg, data})
+}
+
+func RpcDispatch(rpcSendData *RpcSendData) {
+	msg := &Message{}
+	err := json.Unmarshal(rpcSendData.Data, msg)
+	if err != nil {
+		log.Println(err.Error())
+		return
+	}
+	msg.Id = rpcSendData.MessageId
+	//根据cmd对逻辑进行处理
+	switch msg.Cmd {
+	case CMD_SINGLE_MSG:
+		sendMsg(&Data{msg, rpcSendData.Data})
+	case CMD_ROOM_MSG:
+		//群聊转发逻辑 获取群用户列表
+		for _, uid := range rpcSendData.ToUIds {
+			msg.Dstid = uid
+			sendMsg(&Data{msg, rpcSendData.Data})
 		}
 	}
 }
-
 func localHost(usrId string) (string, bool) {
 	ip := userService.GetHost(usrId)
 	if common.ServerIp != ip {
@@ -133,7 +143,7 @@ func rpcSendProc() {
 	for {
 		select {
 		case data := <-rpcSendChan:
-			err := client.SendMessage(data.IP, data.Data)
+			err := client.SendMessage(data.MessageId, data.ToUIds, data.IP, data.Data)
 			if err != nil {
 				//TODO 重传或者其他处理
 				log.Println(err.Error())
@@ -144,16 +154,40 @@ func rpcSendProc() {
 }
 
 //后端调度逻辑处理
-func Dispatch(data []byte, msg *Message) {
+func Dispatch(data *Data) {
 	//根据cmd对逻辑进行处理
-	switch msg.Cmd {
+	switch data.DataFormat.Cmd {
 	case CMD_SINGLE_MSG:
-		sendMsg(msg.Dstid, data)
+		if ip, isLocal := localHost(strconv.FormatInt(data.DataFormat.Dstid, 10)); isLocal {
+			sendMsg(data)
+		} else {
+			rpcSendChan <- &RpcSendData{
+				ToUIds:    []int64{data.DataFormat.Dstid},
+				MessageId: data.DataFormat.Id,
+				IP:        ip,
+				Data:      data.Data,
+			}
+		}
 	case CMD_ROOM_MSG:
-		//群聊转发逻辑
-		for _, v := range clientMap {
-			if v.GroupSets.Has(msg.Dstid) {
-				v.DataQueue <- data
+		//群聊转发逻辑 获取群用户列表
+		CId := data.DataFormat.Dstid
+		UIds := contactService.GetCommunityUsers(CId)
+		sendIp := make(map[string][]int64)
+		for _, userIdString := range UIds {
+			userIdInt, _ := strconv.ParseInt(userIdString, 10, 64)
+			if ip, isLocal := localHost(userIdString); isLocal {
+				data.DataFormat.Dstid = userIdInt
+				sendMsg(data)
+			} else { //不能按人去推送给各个机器 要按机器推送
+				sendIp[ip] = append(sendIp[ip], userIdInt)
+			}
+		}
+		for ip, uIds := range sendIp {
+			rpcSendChan <- &RpcSendData{
+				MessageId: data.DataFormat.Id,
+				ToUIds:    uIds,
+				IP:        ip,
+				Data:      data.Data,
 			}
 		}
 	case CMD_HEART:
@@ -162,12 +196,12 @@ func Dispatch(data []byte, msg *Message) {
 }
 
 //发送消息
-func sendMsg(userId int64, msg []byte) {
+func sendMsg(data *Data) {
 	rwlocker.RLock()
-	node, ok := clientMap[userId]
+	node, ok := clientMap[data.DataFormat.Dstid]
 	rwlocker.RUnlock()
 	if ok {
-		node.DataQueue <- msg
+		node.DataQueue <- data
 	}
 }
 
