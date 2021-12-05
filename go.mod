@@ -3,12 +3,12 @@ module ginchat
 go 1.12
 
 require (
-	github.com/gin-gonic/gin v1.5.0
+	github.com/gin-gonic/gin v1.7.7
 	github.com/go-redis/redis v6.15.7+incompatible
 	github.com/go-sql-driver/mysql v1.4.1
 	github.com/go-xorm/xorm v0.7.9
-	github.com/golang/protobuf v1.3.2
-	github.com/gorilla/websocket v1.4.0
+	github.com/golang/protobuf v1.3.3
+	github.com/gorilla/websocket v1.4.2
 	github.com/natefinch/lumberjack v2.0.0+incompatible
 	github.com/sirupsen/logrus v1.2.0
 	github.com/spf13/pflag v1.0.3
